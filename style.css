@@ -352,16 +352,15 @@ body.hero-bg::before {
   position: absolute;
   inset: 0;
   width: 100%;
-  /* paper-like surface: warm off-white base + subtle grain and vertical fibers */
-  background-color: #fbf6f2;
-  background-image:
-    linear-gradient(180deg, rgba(255,255,255,0.55), rgba(250,248,246,0.85)),
-    repeating-linear-gradient(90deg, rgba(0,0,0,0.014) 0 1px, transparent 1px 7px),
-    radial-gradient(rgba(0,0,0,0.02) 0.6px, transparent 0.8px);
-  background-blend-mode: overlay, normal, normal;
-  background-size: 100% 100%, 7px 100%, 36px 36px;
-  border-radius: 10px;
-  box-shadow: 0 14px 30px rgba(0,0,0,0.14), inset 0 1px 0 rgba(255,255,255,0.6), inset 0 -8px 24px rgba(0,0,0,0.03);
+  /* Frosted glass effect (Apple-like) */
+  background: rgba(255,255,255,0.36);
+  border: 1px solid rgba(255,255,255,0.6);
+  -webkit-backdrop-filter: blur(10px) saturate(120%);
+  backdrop-filter: blur(10px) saturate(120%);
+  /* subtle noise/film overlay for tactile feel */
+  background-image: linear-gradient(rgba(255,255,255,0.02), rgba(255,255,255,0.02));
+  border-radius: 12px;
+  box-shadow: 0 16px 36px rgba(0,0,0,0.16), inset 0 1px 0 rgba(255,255,255,0.6);
   transform-origin: left center;
   backface-visibility: hidden;
   transform: rotateY(180deg);
@@ -371,6 +370,7 @@ body.hero-bg::before {
   min-height: 100%;
   box-sizing: border-box;
   color: #111;
+  overflow: hidden;
 }
 
 .page.front {
@@ -413,12 +413,6 @@ body.hero-bg::before {
 }
 
 /* Back side visual: slightly inset content when page is flipped */
-.page.back {
-  background: rgba(255,255,255,0.95);
-  transform: rotateY(180deg);
-}
-
-/* Gradients to strengthen page edges for a more realistic flip */
 .page::before,
 .page::after {
   content: '';
@@ -430,24 +424,21 @@ body.hero-bg::before {
   z-index: 6;
   border-radius: 0 10px 10px 0;
 }
-
-/* right edge highlight (visible on front pages) */
 .page::after {
   right: 0;
-  /* thin bright edge + soft outer shadow to simulate page thickness */
-  background: linear-gradient(90deg, rgba(255,255,255,0.45) 0%, rgba(255,255,255,0.15) 12%, rgba(0,0,0,0.06) 40%, rgba(0,0,0,0) 100%);
-  mix-blend-mode: multiply;
+  /* frosted edge highlight */
+  background: linear-gradient(90deg, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0.25) 18%, rgba(255,255,255,0.06) 36%, rgba(0,0,0,0) 100%);
+  mix-blend-mode: screen;
   opacity: 0.95;
 }
-
-/* left inner shadow (gives paper depth when flipped) */
 .page::before {
   left: 0;
-  /* inner gutter shadow to give paper depth at the binding */
+  /* subtle inner tint at the binding for depth */
   background: linear-gradient(270deg, rgba(0,0,0,0.12), rgba(0,0,0,0.04) 20%, rgba(0,0,0,0) 60%);
   border-radius: 10px 0 0 10px;
-  opacity: 0.9;
+  opacity: 0.6;
 }
+
 
 /* reduce effect on small screens */
 @media (max-width: 480px) {
