@@ -352,9 +352,16 @@ body.hero-bg::before {
   position: absolute;
   inset: 0;
   width: 100%;
-  background: rgba(255,255,255,0.98);
+  /* paper-like surface: warm off-white base + subtle grain and vertical fibers */
+  background-color: #fbf6f2;
+  background-image:
+    linear-gradient(180deg, rgba(255,255,255,0.55), rgba(250,248,246,0.85)),
+    repeating-linear-gradient(90deg, rgba(0,0,0,0.014) 0 1px, transparent 1px 7px),
+    radial-gradient(rgba(0,0,0,0.02) 0.6px, transparent 0.8px);
+  background-blend-mode: overlay, normal, normal;
+  background-size: 100% 100%, 7px 100%, 36px 36px;
   border-radius: 10px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+  box-shadow: 0 14px 30px rgba(0,0,0,0.14), inset 0 1px 0 rgba(255,255,255,0.6), inset 0 -8px 24px rgba(0,0,0,0.03);
   transform-origin: left center;
   backface-visibility: hidden;
   transform: rotateY(180deg);
@@ -427,7 +434,8 @@ body.hero-bg::before {
 /* right edge highlight (visible on front pages) */
 .page::after {
   right: 0;
-  background: linear-gradient(90deg, rgba(0,0,0,0.06), rgba(0,0,0,0));
+  /* thin bright edge + soft outer shadow to simulate page thickness */
+  background: linear-gradient(90deg, rgba(255,255,255,0.45) 0%, rgba(255,255,255,0.15) 12%, rgba(0,0,0,0.06) 40%, rgba(0,0,0,0) 100%);
   mix-blend-mode: multiply;
   opacity: 0.95;
 }
@@ -435,9 +443,10 @@ body.hero-bg::before {
 /* left inner shadow (gives paper depth when flipped) */
 .page::before {
   left: 0;
-  background: linear-gradient(270deg, rgba(0,0,0,0.06), rgba(0,0,0,0));
+  /* inner gutter shadow to give paper depth at the binding */
+  background: linear-gradient(270deg, rgba(0,0,0,0.12), rgba(0,0,0,0.04) 20%, rgba(0,0,0,0) 60%);
   border-radius: 10px 0 0 10px;
-  opacity: 0.6;
+  opacity: 0.9;
 }
 
 /* reduce effect on small screens */
