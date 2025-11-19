@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>我们的主页</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="hero-bg">
+  <!-- 导航栏 -->
+  <div class="navbar">
+    <a href="main.html" class="logo">Our Story</a>
+    <div class="nav-links">
+      <a href="album.html">相册</a>
+      <a href="memory.html">纪念册</a>
+      <a href="tree.html">树苗</a>
+    </div>
+  </div>
+
+  <!-- 雪花容器（仅在首页显示） -->
+  <div class="snow-container" aria-hidden="true"></div>
+
+  <div class="hero">
+    <div class="container">
+      <h1 class="section-title fade-in">Our daily life</h1>
+      <p class="fade-in" style="animation-delay:0.1s;">
+        欢迎来到我们的日常小雨宙
+      </p>
+      <!-- 按钮：滚动到纪念册时间轴 -->
+      <div style="text-align:center;">
+        <a href="memory.html#timeline" class="btn btn-hero fade-in" style="animation-delay:0.25s;">开始探索</a>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
+<script>
+// Snowflake generator for main page
+(function () {
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const container = document.querySelector('.snow-container');
+    if (!container) return;
+
+    const SNOW_COUNT = 36; // adjust for density/performance
+    const vw = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0);
+
+    function rand(min, max) { return Math.random() * (max - min) + min; }
+
+    for (let i = 0; i < SNOW_COUNT; i++) {
+      const span = document.createElement('span');
+      span.className = 'snowflake';
+      span.textContent = '❄';
+
+      // random properties
+      const left = (rand(0, 100)).toFixed(2) + '%';
+      const size = Math.round(rand(10, 28)) + 'px';
+      const duration = (rand(6, 16)).toFixed(2) + 's';
+      const delay = (-rand(0, 16)).toFixed(2) + 's';
+      const sway = (rand(-vw * 0.06, vw * 0.06)).toFixed(2) + 'px';
+
+      span.style.setProperty('--left', left);
+      span.style.setProperty('--size', size);
+      span.style.setProperty('--duration', duration);
+      span.style.setProperty('--delay', delay);
+      span.style.setProperty('--sway', sway);
+
+      container.appendChild(span);
+    }
+
+    // Remove snow on page hide to save resources
+    window.addEventListener('pagehide', () => { container.innerHTML = ''; });
+  });
+})();
+</script>

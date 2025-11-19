@@ -1,0 +1,523 @@
+/* ========= 基础设置 ========= */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* ensure background covers full viewport height */
+html, body {
+  height: 100%;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", "PingFang SC", sans-serif;
+  background: #ffd0e6; /* 稍微调深的粉色背景，提升雪花可见性 */
+  color: #111;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+:root {
+  --radius: 12px;
+  --shadow: 0 6px 20px rgba(0,0,0,0.08);
+  --bg-card: #ffffff;
+  --accent: #ff66a3; /* 粉色主色 */
+  --accent-light: #ffe6f0;
+  --navbar-height: 64px;
+}
+
+/* ========= 通用布局 ========= */
+.container {
+  width: 90%;
+  max-width: 480px; /* 手机优化 */
+  margin: 0 auto;
+  padding: 20px 0;
+}
+
+/* ========= 首页大屏（Hero） ========= */
+.hero {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  min-height: calc(100vh - var(--navbar-height));
+  padding: 28px 16px;
+}
+
+/* Use a body class to apply the main page background so it fills the whole document. */
+body.hero-bg {
+  background-image: url('Pics/main_bg.png');
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+  background-color: #ffd0e6; /* fallback color */
+}
+
+/* Overlay moved to body so it covers the whole background image */
+body.hero-bg::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.2);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Keep hero content above the overlay */
+.hero {
+  position: relative;
+  color: #fff; /* 保证文字在背景上可读 */
+}
+.hero > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* Move hero content slightly downward: align to top of hero and add top padding */
+.hero {
+  justify-content: flex-start;
+  padding-top: 196px; /* 调整此值以改变下移距离 */
+  padding-bottom: 48px;
+}
+
+.section-title {
+  font-size: 1.8rem;
+  font-weight: 600;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+/* ========= 按钮 ========= */
+.btn {
+  display: inline-block;
+  padding: 10px 20px;
+  border-radius: var(--radius);
+  background: var(--accent);
+  color: white;
+  text-decoration: none;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: 0.25s;
+  box-shadow: var(--shadow);
+}
+
+.btn:hover {
+  background: #e05592;
+  transform: translateY(-2px);
+}
+
+.btn-light {
+  background: var(--accent-light);
+  color: var(--accent);
+  box-shadow: none;
+}
+
+.btn-light:hover {
+  background: #ffd6e6;
+}
+
+/* Hero-specific button: white background, pink text, slightly lower placement */
+.btn-hero {
+  background: #ffffff;
+  color: var(--accent);
+  border: 1px solid rgba(255,102,163,0.12);
+  box-shadow: var(--shadow);
+  transition: background 180ms ease, transform 160ms ease, color 160ms ease;
+}
+.btn-hero:hover {
+  background: #fff5f9;
+  transform: translateY(-2px);
+}
+
+/* push the hero button a little lower than default */
+.hero .btn-hero {
+  margin-top: 240px; /* 三倍间距：桌面 */
+}
+
+@media (max-width: 480px) {
+  .hero .btn-hero {
+    margin-top: 80px; /* 三倍间距：移动端 */
+  }
+}
+
+/* ========= Hero button animation ========= */
+@keyframes btnFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+/* subtle floating animation to attract attention; pause on hover/focus */
+.btn-hero {
+  animation: btnFloat 4.5s ease-in-out infinite;
+}
+.btn-hero:hover,
+.btn-hero:focus {
+  animation-play-state: paused;
+}
+
+.btn-hero:active {
+  transform: translateY(-1px) scale(0.99);
+  transition: transform 120ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn-hero {
+    animation: none !important;
+    transition: none !important;
+  }
+  .fade-in {
+    animation: none !important;
+    transform: none !important;
+  }
+}
+
+/* When the hero button is also a fade-in element, play entrance then start floating */
+.btn-hero.fade-in {
+  animation: fadeIn 0.8s ease forwards, btnFloat 4.5s ease-in-out 0.95s infinite;
+}
+
+.btn-hero.fade-in:hover,
+.btn-hero.fade-in:focus {
+  animation-play-state: paused;
+}
+
+/* ========= 卡片 ========= */
+.card {
+  background: var(--bg-card);
+  padding: 20px;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  transition: 0.3s;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 28px rgba(0,0,0,0.12);
+}
+
+/* ========= 导航栏 ========= */
+.navbar {
+  width: 100%;
+  backdrop-filter: blur(12px);
+  background: rgba(255,255,255,0.8);
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 999;
+  padding: 12px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+}
+
+.navbar .logo {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+/* 当 logo 是链接时，去掉下划线并保持与原来一致的字体/颜色 */
+.navbar .logo {
+  text-decoration: none;
+  color: inherit;
+  display: inline-block;
+}
+.navbar .logo:hover {
+  text-decoration: none;
+  color: var(--accent);
+}
+
+.nav-links {
+  display: flex;
+  gap: 16px;
+}
+
+.nav-links a {
+  text-decoration: none;
+  color: #333;
+  font-weight: 500;
+  transition: color 0.25s;
+}
+
+.nav-links a:hover {
+  color: var(--accent);
+}
+
+/* ========= 图片网格（相册页用） ========= */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.grid img {
+  width: 100%;
+  border-radius: var(--radius);
+  object-fit: cover;
+  box-shadow: var(--shadow);
+  transition: 0.25s;
+}
+
+.grid img:hover {
+  transform: scale(1.03);
+}
+
+/* ========= 时间轴（纪念册） ========= */
+.timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-left: 8px;
+  border-left: 3px solid #ffc0d6;
+  /* 容器保持可见；单个项由各自的 .visible 控制 */
+  opacity: 1;
+  transform: none;
+}
+
+/* 确保整个时间轴容器位于页面遮罩之上 */
+#timeline {
+  position: relative;
+  z-index: 2;
+}
+
+#timeline {
+  padding-bottom: 48px; /* 增加底部内边距让容器更长 */
+}
+
+/* 标题下移，给时间轴上方留出空间 */
+#timeline .section-title {
+  margin-top: 36px;
+  margin-bottom: 18px;
+  color: #ffffff;
+  text-shadow: none;
+  position: relative;
+  z-index: 3;
+}
+
+.timeline-item {
+  position: relative;
+  padding-left: 16px;
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 520ms cubic-bezier(.2,.9,.2,1), transform 520ms cubic-bezier(.2,.9,.2,1);
+}
+
+/* 单个时间轴项进入视口时添加 .visible 显示（类似 Apple 的平滑上浮效果） */
+.timeline-item.visible {
+  opacity: 1;
+  transform: none;
+}
+
+.timeline-item::before {
+  content: "";
+  width: 10px;
+  height: 10px;
+  background: var(--accent);
+  border-radius: 50%;
+  position: absolute;
+  left: -6px;
+  top: 4px;
+}
+
+/* ========= 翻页书样式（Memory Page Flip） ========= */
+.book {
+  perspective: 1800px;
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  position: relative;
+  height: auto;
+}
+
+.book-stage {
+  position: relative;
+  width: 100%;
+  /* 使用视口高度以更灵活地撑满页面：增高翻页区以占据更多纵向空间 */
+  min-height: 85vh;
+  transform-style: preserve-3d;
+}
+
+@media (max-width: 900px) {
+  .book-stage { min-height: 78vh; }
+}
+
+@media (max-width: 600px) {
+  .book-stage { min-height: 70vh; }
+}
+
+.page {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  background: rgba(255,255,255,0.98);
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+  transform-origin: left center;
+  backface-visibility: hidden;
+  transform: rotateY(180deg);
+  transition: transform 700ms cubic-bezier(.2,.9,.2,1), box-shadow 300ms ease;
+  padding: 28px;
+  /* Ensure each page fills the book-stage vertically */
+  min-height: 100%;
+  box-sizing: border-box;
+  color: #111;
+}
+
+.page.front {
+  transform: rotateY(0deg);
+}
+
+.page.flipped {
+  transform: rotateY(-180deg);
+}
+
+.page .page-meta {
+  font-size: 0.9rem;
+  color: #666;
+  margin-bottom: 8px;
+}
+
+.page h3 {
+  margin-top: 0;
+}
+
+.book-controls {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.book-controls button {
+  background: rgba(255,255,255,0.9);
+  border: 1px solid rgba(0,0,0,0.06);
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 6px 14px rgba(0,0,0,0.06);
+}
+
+.book-controls button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* Back side visual: slightly inset content when page is flipped */
+.page.back {
+  background: rgba(255,255,255,0.95);
+  transform: rotateY(180deg);
+}
+
+/* Gradients to strengthen page edges for a more realistic flip */
+.page::before,
+.page::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 36px;
+  pointer-events: none;
+  z-index: 6;
+  border-radius: 0 10px 10px 0;
+}
+
+/* right edge highlight (visible on front pages) */
+.page::after {
+  right: 0;
+  background: linear-gradient(90deg, rgba(0,0,0,0.06), rgba(0,0,0,0));
+  mix-blend-mode: multiply;
+  opacity: 0.95;
+}
+
+/* left inner shadow (gives paper depth when flipped) */
+.page::before {
+  left: 0;
+  background: linear-gradient(270deg, rgba(0,0,0,0.06), rgba(0,0,0,0));
+  border-radius: 10px 0 0 10px;
+  opacity: 0.6;
+}
+
+/* reduce effect on small screens */
+@media (max-width: 480px) {
+  .page::before, .page::after { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page, .page.flipped, .page.front { transition: none !important; transform: none !important; }
+}
+
+/* ========= 小树苗（成长页） ========= */
+.tree-box {
+  text-align: center;
+  padding: 30px;
+}
+
+.tree-img {
+  width: 120px;
+  transition: 0.4s ease;
+}
+
+.tree-img.grow {
+  transform: scale(1.15);
+}
+
+/* ========= 轻动画 ========= */
+.fade-in {
+  opacity: 0;
+  transform: translateY(20px);
+  animation: fadeIn 0.8s ease forwards;
+}
+
+@keyframes fadeIn {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ========= 雪花效果 ========= */
+.snow-container {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: var(--navbar-height);
+  height: calc(100vh - var(--navbar-height));
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 60;
+}
+
+.snowflake {
+  position: absolute;
+  top: -10vh;
+  left: 0;
+  color: #ffffff;
+  opacity: 0.95;
+  will-change: transform, opacity;
+  font-family: serif;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.12);
+  /* per-element CSS variables (set by JS):
+     --left: 10%; --size: 14px; --duration: 8s; --delay: 0s; --sway: 30px; */
+  left: var(--left, 50%);
+  font-size: var(--size, 14px);
+  animation: fall var(--duration, 8s) linear var(--delay, 0s) infinite;
+}
+
+@keyframes fall {
+  from {
+    transform: translateX(0) translateY(-10vh) rotate(0deg);
+    opacity: 0.9;
+  }
+  to {
+    transform: translateX(var(--sway, 30px)) translateY(110vh) rotate(360deg);
+    opacity: 0.95;
+  }
+}
+
+/* Accessibility: 不要在偏好减少动画的用户上播放雪花 */
+@media (prefers-reduced-motion: reduce) {
+  .snow-container { display: none !important; }
+}
