@@ -49,7 +49,7 @@ body {
 
 /* Use a body class to apply the main page background so it fills the whole document. */
 body.hero-bg {
-  background-image: url('Pics/main_bg.png');
+  background-image: url('Elements/main_bg.png');
   background-size: cover;
   background-position: center center;
   background-repeat: no-repeat;
@@ -64,6 +64,12 @@ body.hero-bg::before {
   background: rgba(0,0,0,0.2);
   pointer-events: none;
   z-index: 0;
+}
+
+/* Modifier for pages that should keep the overlay but not show the background image */
+body.hero-bg.no-bg {
+  background-image: none !important;
+  background-color: #ffd0e6;
 }
 
 /* Keep hero content above the overlay */
@@ -263,6 +269,107 @@ body.hero-bg::before {
 
 .grid img:hover {
   transform: scale(1.03);
+}
+
+/* ========= 相册页 (Album) ========= */
+.album-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 20px; /* increased spacing between images */
+  margin-top: 18px;
+}
+.album-grid figure {
+  margin: 0;
+  background: rgba(255,255,255,0.02);
+  border-radius: 10px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 220ms ease, box-shadow 220ms ease;
+}
+.album-grid figure:hover { transform: translateY(-6px); box-shadow: 0 12px 26px rgba(0,0,0,0.12); }
+.album-grid img { width: 100%; height: 140px; object-fit: cover; display: block; }
+.album-grid figcaption { font-size: 0.85rem; color: #666; padding: 8px 10px; text-align: center; }
+
+/* Lightbox */
+.lightbox {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(0,0,0,0.6);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 260ms ease, visibility 0s linear 260ms;
+  z-index: 2000;
+}
+.lightbox.open { opacity: 1; visibility: visible; transition-delay: 0s; }
+.lightbox .lb-stage { max-width: 92vw; max-height: 84vh; position: relative; display:flex; align-items:center; justify-content:center; }
+.lightbox img { max-width: 100%; max-height: 100%; border-radius: 10px; box-shadow: 0 18px 40px rgba(0,0,0,0.45); }
+.lightbox .lb-caption { margin-top: 10px; color: #fff; text-align:center; font-size:0.95rem; }
+.lightbox .lb-close, .lightbox .lb-prev, .lightbox .lb-next {
+  position: absolute; background: rgba(255,255,255,0.12); border: none; color: #fff; font-size: 22px; padding: 8px 12px; border-radius: 8px; cursor: pointer; backdrop-filter: blur(4px);
+}
+.lightbox .lb-close { top: 18px; right: 18px; }
+.lightbox .lb-prev { left: 18px; top: 50%; transform: translateY(-50%); }
+.lightbox .lb-next { right: 18px; top: 50%; transform: translateY(-50%); }
+
+@media (max-width: 640px) {
+  .album-grid img { height: 110px; }
+  .lightbox .lb-stage { max-height: 80vh; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .album-grid figure, .lightbox { transition: none !important; }
+}
+
+/* Album header: white text and lowered placement */
+.album-hero {
+  text-align: center;
+  color: #fff;
+  padding-top: 120px; /* push header downward on desktop */
+  padding-bottom: 20px;
+}
+.album-hero .section-title,
+.album-hero p {
+  color: #fff;
+}
+
+@media (max-width: 640px) {
+  .album-hero { padding-top: 64px; }
+}
+
+/* Use Elements/illu2.png as subtle background for the album header */
+.album-hero {
+  /* keep layout/spacing in the earlier rule; positioning and stacking handled here */
+  position: relative;
+  z-index: 3;
+  overflow: visible;
+}
+
+/* Create a pseudo-element that covers the full viewport width and holds the header artwork.
+   It's placed above the page overlay (body.hero-bg::before) but behind the header text. */
+.album-hero::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: 0;
+  width: 100vw;
+  height: 100%;
+  background-image: url('Elements/illu2.png');
+  background-repeat: no-repeat;
+  background-position: center top;
+  background-size: 100% auto; /* 横向铺满，按宽度缩放 */
+  opacity: 0; /* start transparent, animate to visible */
+  animation: illuFade 1980ms cubic-bezier(.2,.9,.2,1) 0.06s forwards;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Ensure header text sits above the pseudo-element and page overlay */
+.album-hero > * {
+  position: relative;
+  z-index: 4;
 }
 
 /* ========= 时间轴（纪念册） ========= */
@@ -475,6 +582,19 @@ body.hero-bg::before {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+/* Illu2 subtle fade-in (opacity-only so position isn't changed) */
+@keyframes illuFade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .album-hero::before {
+    animation: none !important;
+    opacity: 1 !important;
   }
 }
 
