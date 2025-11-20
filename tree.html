@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>小树苗</title>
+  <link rel="stylesheet" href="style.css" />
+  </head>
+<body class="hero-bg no-bg">
+  <div class="navbar">
+    <a href="index.html" class="logo">Our Story</a>
+    <div class="nav-links">
+      <a href="album.html">相册</a>
+      <a href="memory.html">纪念册</a>
+      <a href="tree.html">树苗</a>
+    </div>
+  </div>
+
+  <main class="container fade-in" style="padding-top: calc(var(--navbar-height) + 12px); padding-bottom:56px;">
+    <section class="tree-box card">
+      <h2 class="section-title">我们的小树苗</h2>
+
+      <p>记得每天来给小树苗浇水哦。</p>
+
+      <!-- Inline SVG so the page doesn't depend on external image files -->
+      <div aria-hidden="true" style="display:flex;justify-content:center; margin: 18px 0;">
+        <svg class="tree-img" viewBox="0 0 120 120" width="160" height="160" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="小树苗">
+          <defs>
+            <linearGradient id="g" x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0%" stop-color="#9ee39a" />
+              <stop offset="100%" stop-color="#57b56b" />
+            </linearGradient>
+            <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+              <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#2b6a36" flood-opacity="0.12" />
+            </filter>
+          </defs>
+
+          <!-- soil -->
+          <ellipse cx="60" cy="108" rx="38" ry="8" fill="#7a4a2a" opacity="0.95" />
+
+          <!-- stem -->
+          <g filter="url(#shadow)">
+            <path d="M60 92 C62 78, 62 64, 64 52" stroke="#6a4b2a" stroke-width="4" stroke-linecap="round" fill="none" />
+
+            <!-- left leaf -->
+            <path d="M60 74 C48 70, 36 64, 42 54 C48 44, 64 50, 60 74 Z" fill="url(#g)" />
+
+            <!-- right leaf -->
+            <path d="M64 70 C78 66, 90 60, 86 50 C82 40, 68 46, 64 70 Z" fill="#64c36a" />
+          </g>
+        </svg>
+      </div>
+
+      <div style="display:flex;gap:12px;justify-content:center;align-items:center;margin-top:8px;">
+        <button id="waterBtn" class="btn">给它浇水</button>
+      </div>
+
+      <p style="margin-top:12px;text-align:center;color:#666; font-size:0.95rem;">浇水次数：<span id="count">0</span> &nbsp; 收获次数：<span id="harvestCount">0</span></p>
+      <div id="harvestMsg" style="text-align:center;color:#b33;font-size:0.95rem;margin-top:6px;min-height:1.2em"></div>
+      <small id="hint" style="color:#999;margin-left:8px;display:block;text-align:center;margin-top:6px"></small>
+    </section>
+
+    <!-- Message board: 留言板 -->
+    <section class="message-board card" aria-label="留言板">
+      <h3>留言板</h3>
+      <div class="mb-admin" aria-hidden="false">
+        <!-- subtle admin toggle (gear). Click to prompt for password -->
+        <button id="adminToggle" class="admin-toggle" title="管理员入口">⚙</button>
+        <div class="admin-controls">
+          <button id="adminLogoutBtn" class="btn btn-light" style="display:none">退出管理员</button>
+          <button id="deleteAllBtn" class="btn btn-light" style="display:none">删除全部留言</button>
+        </div>
+      </div>
+      <form id="mbForm" class="mb-form" autocomplete="off">
+        <div class="row">
+          <input id="mbName" type="text" placeholder="你的姓名（可选）" maxlength="60" />
+        </div>
+        <textarea id="mbText" placeholder="写下一段留言..." required maxlength="800"></textarea>
+        <div class="mb-actions">
+          <button type="submit" class="btn">发布留言</button>
+        </div>
+      </form>
+
+      <ul id="mbList" class="mb-list" aria-live="polite"></ul>
+    </section>
+  </main>
+
+  <script src="tree-storage.js"></script>
+  <script>
+    // global admin/harvest password (client-side)
+    window.ADMIN_PW = '971314';
+  </script>
+  <script>
+  (function(){
+    const img = document.querySelector('.tree-img');
+    const btn = document.getElementById('waterBtn');
+    const countEl = document.getElementById('count');
+    const hint = document.getElementById('hint');
+    const harvestMsg = document.getElementById('harvestMsg');
+
+    // initialize from TreeStorage
+    const st = window.TreeStorage.getState();
+    let watered = st.wateredCount || 0;
+    countEl.textContent = watered;
+
+    function applyGrow(times){
+      const clamp = Math.min(times, 6);
+      img.style.transition = 'transform 400ms cubic-bezier(.2,.9,.2,1)';
+      img.style.transform = `scale(${1 + clamp * 0.04})`;
+      img.classList.add('grow');
+      setTimeout(()=> img.classList.remove('grow'), 480);
+    }
+    const harvestEl = document.getElementById('harvestCount');
+    function updateUI(){
+      const s = window.TreeStorage.getState();
+      watered = s.wateredCount || 0;
+      countEl.textContent = watered;
+      harvestEl.textContent = s.harvestCount || 0;
+      harvestMsg.textContent = '';
+      hint.textContent = '';
+      if(s.readyForHarvest){
+        // show waiting state but keep button clickable so admin can attempt harvest
+        btn.disabled = false;
+        btn.textContent = '等待收获';
+        hint.textContent = '已达到收获条件，点击按钮并输入管理员密码完成收获。';
+        return;
+      }
+      if(!window.TreeStorage.canWaterToday()){
+        btn.disabled = true;
+        btn.textContent = '今天已浇水';
+      } else {
+        btn.disabled = false;
+        btn.textContent = '给它浇水';
+      }
+    }
+
+    // initial visual grow based on stored watered count
+    applyGrow(watered);
+    updateUI();
+
+    btn.addEventListener('click', () => {
+      const state = window.TreeStorage.getState();
+      // if already ready, treat the click as an attempt to complete harvest
+      if(state.readyForHarvest){
+        const pw = prompt('达到收获次数，请输入管理员密码以完成收获：');
+        if(pw === null){
+          // canceled - keep waiting
+          harvestMsg.textContent = '收获已取消，仍需管理员密码完成。';
+          return;
+        }
+        if(pw === window.ADMIN_PW){
+          const done = window.TreeStorage.completeHarvest();
+          if(done.ok){
+            harvestMsg.textContent = '';
+            hint.textContent = '收获成功！小树苗已回到初始状态。';
+            img.style.transition = 'transform 520ms cubic-bezier(.2,.9,.2,1)';
+            img.style.transform = 'scale(1.32)';
+            setTimeout(()=>{
+              img.style.transform = '';
+              updateUI();
+            }, 600);
+          } else {
+            harvestMsg.textContent = '收获失败：' + (done.message||'未知错误');
+            updateUI();
+          }
+        } else {
+          // wrong password — show message under harvest count and keep waiting
+          harvestMsg.textContent = '密码错误，无法完成收获。';
+          return;
+        }
+        return;
+      }
+
+      // otherwise attempt to water
+      const res = window.TreeStorage.water();
+      if(!res.allowed){
+        if(res.reason === 'need_harvest'){
+          harvestMsg.textContent = '达到收获次数，需管理员密码完成收获。';
+        } else {
+          hint.textContent = '今天已经浇过水了，请明天再来。';
+        }
+        btn.disabled = true;
+        btn.textContent = '今天已浇水';
+        return;
+      }
+      // normal watering
+      hint.textContent = '浇水成功，明天再来一次吧。';
+      applyGrow(res.waterCount);
+      updateUI();
+    });
+
+    // keyboard accessibility
+    btn.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') btn.click(); });
+  })();
+  </script>
+  <script>
+  (function(){
+    // Message-board with admin controls (client-side only)
+    const KEY = 'tree_messages_v1';
+    const ADMIN_KEY = 'tree_admin_v1';
+
+    const section = document.querySelector('.message-board');
+    const form = document.getElementById('mbForm');
+    const nameInput = document.getElementById('mbName');
+    const textInput = document.getElementById('mbText');
+    const list = document.getElementById('mbList');
+
+    const adminToggle = document.getElementById('adminToggle');
+    const adminLogoutBtn = document.getElementById('adminLogoutBtn');
+    const deleteAllBtn = document.getElementById('deleteAllBtn');
+
+    function read(){ try{ return JSON.parse(localStorage.getItem(KEY) || '[]'); }catch{ return []; } }
+    function write(arr){ localStorage.setItem(KEY, JSON.stringify(arr)); }
+
+    function isAdmin(){ return localStorage.getItem(ADMIN_KEY) === '1'; }
+    function setAdmin(val){
+      if(val){ localStorage.setItem(ADMIN_KEY, '1'); section.classList.add('admin'); }
+      else { localStorage.removeItem(ADMIN_KEY); section.classList.remove('admin'); }
+      // toggle admin controls visibility
+      adminToggle.style.display = val ? 'none' : '';
+      adminLogoutBtn.style.display = val ? '' : 'none';
+      deleteAllBtn.style.display = val ? '' : 'none';
+      // re-render so delete buttons (hidden by CSS) appear/disappear
+      render();
+    }
+
+    function escapeHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+    function render(){
+      const msgs = read();
+      list.innerHTML = '';
+      msgs.slice().reverse().forEach(m => {
+        const li = document.createElement('li'); li.className = 'mb-item';
+        const meta = document.createElement('div'); meta.className = 'mb-meta';
+        const who = document.createElement('div'); who.textContent = m.name || '匿名';
+        const when = document.createElement('div'); when.textContent = new Date(m.time).toLocaleString();
+        meta.appendChild(who); meta.appendChild(when);
+        const text = document.createElement('div'); text.className = 'mb-text'; text.innerHTML = escapeHtml(m.text);
+        const controls = document.createElement('div'); controls.style.marginTop='8px';
+        // delete button exists but is styled hidden unless admin; fine to create always
+        const del = document.createElement('button'); del.className = 'mb-delete'; del.textContent = '删除';
+        del.addEventListener('click', ()=>{ if(isAdmin()){ if(confirm('确认删除该留言？')) deleteMessage(m.id); } else { alert('需要管理员权限才能删除留言'); } });
+        controls.appendChild(del);
+        li.appendChild(meta); li.appendChild(text); li.appendChild(controls);
+        list.appendChild(li);
+      });
+    }
+
+    function addMessage(name, text){
+      const msgs = read();
+      const msg = { id: Date.now().toString(36) + '-' + Math.floor(Math.random()*1000), name: name || '', text: text.trim(), time: Date.now() };
+      msgs.push(msg);
+      write(msgs);
+      render();
+    }
+
+    function deleteMessage(id){
+      if(!isAdmin()){ alert('需要管理员权限'); return; }
+      let msgs = read(); msgs = msgs.filter(m => m.id !== id); write(msgs); render();
+    }
+
+    // admin login/logout (toggle is subtle gear)
+    adminToggle.addEventListener('click', ()=>{
+      const pw = prompt('请输入管理员密码：');
+      if(pw === null) return; // cancelled
+      if(pw === window.ADMIN_PW){ setAdmin(true); alert('已以管理员身份登录'); }
+      else alert('密码错误');
+    });
+    adminLogoutBtn.addEventListener('click', ()=>{ if(confirm('退出管理员？')) setAdmin(false); });
+
+    deleteAllBtn.addEventListener('click', ()=>{
+      if(!isAdmin()){ alert('需要管理员权限'); return; }
+      if(!confirm('确认删除所有留言？此操作无法撤销。')) return;
+      localStorage.removeItem(KEY); render();
+    });
+
+    form.addEventListener('submit', (e)=>{
+      e.preventDefault();
+      const text = textInput.value.trim(); if(!text) return;
+      const name = nameInput.value.trim(); addMessage(name, text);
+      textInput.value = ''; nameInput.value = ''; textInput.focus();
+    });
+
+    // initialize admin state and render
+    setAdmin(isAdmin());
+    render();
+  })();
+  </script>
+
+</body>
+</html>

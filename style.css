@@ -56,6 +56,20 @@ body.hero-bg {
   background-color: #ffd0e6; /* fallback color */
 }
 
+/* Memory page background (specific image) */
+body.memory-bg {
+  background-image: url('Elements/memory_bg.png');
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+  background-color: #ffdfe9; /* slight fallback/tint for memory page */
+}
+
+/* Disable the global overlay for the memory page (remove 遮罩效果) */
+body.memory-bg::before {
+  display: none !important;
+}
+
 /* Overlay moved to body so it covers the whole background image */
 body.hero-bg::before {
   content: '';
@@ -560,6 +574,35 @@ body.hero-bg.no-bg {
 .tree-box {
   text-align: center;
   padding: 30px;
+  /* place above the page overlay and use frosted-glass styling like the book pages */
+  position: relative;
+  z-index: 3;
+  background: rgba(255,255,255,0.36);
+  border: 1px solid rgba(255,255,255,0.6);
+  -webkit-backdrop-filter: blur(10px) saturate(120%);
+  backdrop-filter: blur(10px) saturate(120%);
+  border-radius: 12px;
+  box-shadow: 0 16px 36px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.6);
+}
+
+/* Tree-page: remove button black borders and default outline, keep an accessible focus ring */
+.tree-box .btn,
+.tree-box .btn-light {
+  border: none;
+  outline: none;
+}
+.tree-box .btn:focus,
+.tree-box .btn-light:focus {
+  outline: none;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.08), 0 0 0 4px rgba(86,193,120,0.12);
+}
+
+/* Prevent the tree card from lifting on hover/active/focus (it should not behave like a button) */
+.tree-box.card:hover,
+.tree-box.card:active,
+.tree-box.card:focus {
+  transform: none !important;
+  box-shadow: 0 16px 36px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.6);
 }
 
 .tree-img {
@@ -569,6 +612,81 @@ body.hero-bg.no-bg {
 
 .tree-img.grow {
   transform: scale(1.15);
+}
+
+/* ========= 留言板样式 (Message board) ========= */
+.message-board {
+  margin-top: 24px;
+  padding: 18px;
+  border-radius: 12px;
+  /* frosted glass like the pages */
+  background: rgba(255,255,255,0.36);
+  border: 1px solid rgba(255,255,255,0.6);
+  -webkit-backdrop-filter: blur(10px) saturate(120%);
+  backdrop-filter: blur(10px) saturate(120%);
+  box-shadow: 0 12px 28px rgba(0,0,0,0.12);
+  position: relative;
+}
+.message-board h3 { margin-top: 0; margin-bottom: 8px; }
+.mb-form { display:flex; flex-direction: column; gap:8px; }
+.mb-form .row { display:flex; gap:8px; }
+.mb-form input[type="text"]{ flex: 0 0 160px; padding:8px; border-radius:8px; border:1px solid rgba(0,0,0,0.08); }
+.mb-form textarea{ padding:10px; border-radius:8px; border:1px solid rgba(0,0,0,0.08); min-height:72px; resize:vertical; }
+.mb-actions { display:flex; gap:8px; justify-content:flex-end; margin-top:6px; }
+.mb-list { list-style:none; margin:12px 0 0 0; padding:0; display:flex; flex-direction:column; gap:10px; }
+.mb-item { padding:10px; border-radius:10px; background: rgba(0,0,0,0.04); }
+.mb-meta { font-size:0.85rem; color:#666; margin-bottom:6px; display:flex; justify-content:space-between; gap:8px; }
+.mb-text { white-space:pre-wrap; color:#111; }
+.mb-delete { background: transparent; border: none; color: #c33; cursor:pointer; font-size:0.95rem; }
+
+/* Remove black border from message-board buttons and make focus ring accessible */
+.message-board .btn,
+.message-board .btn-light {
+  border: none;
+  outline: none;
+}
+.message-board .btn:focus,
+.message-board .btn-light:focus {
+  box-shadow: 0 8px 24px rgba(0,0,0,0.08), 0 0 0 4px rgba(86,193,120,0.12);
+}
+
+/* Hide single-item delete by default; reveal when message-board has admin class */
+.message-board .mb-delete { display: none; }
+.message-board.admin .mb-delete { display: inline-block; }
+
+/* Admin controls container (login/logout/delete all) */
+.mb-admin { display:flex; gap:8px; justify-content:flex-end; align-items:center; margin-bottom:8px; }
+.admin-toggle {
+  position: absolute;
+  right: 12px;
+  top: 12px;
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.06);
+  color: rgba(0,0,0,0.6);
+  border: 1px solid rgba(255,255,255,0.06);
+  cursor: pointer;
+  opacity: 0.5;
+}
+.admin-toggle:hover { opacity: 0.95; background: rgba(255,255,255,0.12); }
+.message-board.admin .admin-toggle { background: rgba(86,193,120,0.12); color: #2b6a36; opacity:1; }
+
+/* reveal admin-controls container when admin */
+.message-board .admin-controls { display: none; position: absolute; right: 56px; top: 10px; gap:8px; }
+.message-board.admin .admin-controls { display: flex; }
+
+/* Prevent message-board card from lifting on hover/active/focus */
+.message-board.card:hover,
+.message-board.card:active,
+.message-board.card:focus { transform: none !important; box-shadow: 0 12px 28px rgba(0,0,0,0.12); }
+.mb-admin .admin-note { color:#666; font-size:0.9rem; margin-right:auto; }
+
+@media (max-width:640px){
+  .mb-form input[type="text"]{ flex:1; }
 }
 
 /* ========= 轻动画 ========= */
