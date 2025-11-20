@@ -91,16 +91,19 @@
     window.ADMIN_PW = '971314';
   </script>
   <script>
-  (function(){
+  (async function(){
     const img = document.querySelector('.tree-img');
     const btn = document.getElementById('waterBtn');
     const countEl = document.getElementById('count');
     const hint = document.getElementById('hint');
     const harvestMsg = document.getElementById('harvestMsg');
 
+    // try to sync with server first (best-effort)
+    try{ await window.TreeStorage.syncWithServer(); }catch(e){}
+
     // initialize from TreeStorage
-    const st = window.TreeStorage.getState();
-    let watered = st.wateredCount || 0;
+    const st0 = window.TreeStorage.getState();
+    let watered = st0.wateredCount || 0;
     countEl.textContent = watered;
 
     function applyGrow(times){
@@ -138,7 +141,7 @@
     applyGrow(watered);
     updateUI();
 
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', async () => {
       const state = window.TreeStorage.getState();
       // if already ready, treat the click as an attempt to complete harvest
       if(state.readyForHarvest){
@@ -148,8 +151,9 @@
           harvestMsg.textContent = '收获已取消，仍需管理员密码完成。';
           return;
         }
-        if(pw === window.ADMIN_PW){
-          const done = window.TreeStorage.completeHarvest();
+        // try server-backed harvest first
+        try{
+          const done = await window.TreeStorage.completeHarvestAsync(pw);
           if(done.ok){
             harvestMsg.textContent = '';
             hint.textContent = '收获成功！小树苗已回到初始状态。';
@@ -160,38 +164,44 @@
               updateUI();
             }, 600);
           } else {
-            harvestMsg.textContent = '收获失败：' + (done.message||'未知错误');
+            // show error under harvest count, keep waiting
+            harvestMsg.textContent = done.message === 'unauthorized' ? '密码错误，无法完成收获。' : (done.message || '收获失败');
             updateUI();
           }
-        } else {
-          // wrong password — show message under harvest count and keep waiting
-          harvestMsg.textContent = '密码错误，无法完成收获。';
-          return;
+        }catch(e){
+          harvestMsg.textContent = '网络错误，无法联系服务器。';
         }
         return;
       }
 
-      // otherwise attempt to water
-      const res = window.TreeStorage.water();
-      if(!res.allowed){
-        if(res.reason === 'need_harvest'){
-          harvestMsg.textContent = '达到收获次数，需管理员密码完成收获。';
-        } else {
-          hint.textContent = '今天已经浇过水了，请明天再来。';
+      // otherwise attempt to water (server-aware)
+      try{
+        const res = await window.TreeStorage.waterAsync();
+        if(!res.allowed){
+          if(res.reason === 'need_harvest' || res.readyForHarvest){
+            harvestMsg.textContent = '达到收获次数，需管理员密码完成收获。';
+            // ensure UI reflects ready state
+            updateUI();
+          } else {
+            hint.textContent = '今天已经浇过水了，请明天再来。';
+            btn.disabled = true;
+            btn.textContent = '今天已浇水';
+          }
+          return;
         }
-        btn.disabled = true;
-        btn.textContent = '今天已浇水';
-        return;
+        // normal watering
+        hint.textContent = '浇水成功，明天再来一次吧。';
+        applyGrow(res.waterCount);
+        updateUI();
+      }catch(e){
+        hint.textContent = '网络错误，操作稍后重试。';
       }
-      // normal watering
-      hint.textContent = '浇水成功，明天再来一次吧。';
-      applyGrow(res.waterCount);
-      updateUI();
     });
 
     // keyboard accessibility
     btn.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') btn.click(); });
   })();
+  </script>
   </script>
   <script>
   (function(){
@@ -211,6 +221,21 @@
 
     function read(){ try{ return JSON.parse(localStorage.getItem(KEY) || '[]'); }catch{ return []; } }
     function write(arr){ localStorage.setItem(KEY, JSON.stringify(arr)); }
+
+    // Try to load messages from server and mirror locally (best-effort)
+    async function loadMessagesFromServer(){
+      try{
+        const res = await fetch('/api/messages', { method: 'GET', credentials: 'same-origin' });
+        if(!res.ok) throw new Error('no');
+        const rows = await res.json();
+        // normalize to client shape (id, name, text, time)
+        write(rows.map(r => ({ id: r.id, name: r.name, text: r.text, time: r.time })));
+        render();
+        return true;
+      }catch(e){
+        return false;
+      }
+    }
 
     function isAdmin(){ return localStorage.getItem(ADMIN_KEY) === '1'; }
     function setAdmin(val){
@@ -246,7 +271,16 @@
       });
     }
 
-    function addMessage(name, text){
+    async function addMessage(name, text){
+      // try server first
+      try{
+        const res = await fetch('/api/messages', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ name: name || '', text: text.trim() }), credentials: 'same-origin' });
+        if(res.ok){
+          const created = await res.json();
+          const msgs = read(); msgs.push({ id: created.id, name: created.name, text: created.text, time: created.time }); write(msgs); render(); return;
+        }
+      }catch(e){ /* fall through */ }
+      // fallback local
       const msgs = read();
       const msg = { id: Date.now().toString(36) + '-' + Math.floor(Math.random()*1000), name: name || '', text: text.trim(), time: Date.now() };
       msgs.push(msg);
@@ -254,8 +288,20 @@
       render();
     }
 
-    function deleteMessage(id){
+    async function deleteMessage(id){
       if(!isAdmin()){ alert('需要管理员权限'); return; }
+      const pw = sessionStorage.getItem('tree_admin_pw') || prompt('请输入管理员密码以删除留言：');
+      if(!pw) return;
+      // try server delete
+      try{
+        const res = await fetch('/api/messages/' + encodeURIComponent(id), { method: 'DELETE', headers: { 'x-admin-pw': pw }, credentials: 'same-origin' });
+        if(res.ok){
+          let msgs = read(); msgs = msgs.filter(m => m.id !== id); write(msgs); render(); return;
+        }
+        const data = await res.json();
+        if(data && data.error === 'unauthorized') { alert('管理员密码错误'); return; }
+      }catch(e){ /* network */ }
+      // fallback local deletion (still allow client-side delete)
       let msgs = read(); msgs = msgs.filter(m => m.id !== id); write(msgs); render();
     }
 
@@ -263,14 +309,22 @@
     adminToggle.addEventListener('click', ()=>{
       const pw = prompt('请输入管理员密码：');
       if(pw === null) return; // cancelled
-      if(pw === window.ADMIN_PW){ setAdmin(true); alert('已以管理员身份登录'); }
+      if(pw === window.ADMIN_PW){ setAdmin(true); sessionStorage.setItem('tree_admin_pw', pw); alert('已以管理员身份登录'); }
       else alert('密码错误');
     });
-    adminLogoutBtn.addEventListener('click', ()=>{ if(confirm('退出管理员？')) setAdmin(false); });
+    adminLogoutBtn.addEventListener('click', ()=>{ if(confirm('退出管理员？')){ setAdmin(false); sessionStorage.removeItem('tree_admin_pw'); } });
 
-    deleteAllBtn.addEventListener('click', ()=>{
+    deleteAllBtn.addEventListener('click', async ()=>{
       if(!isAdmin()){ alert('需要管理员权限'); return; }
       if(!confirm('确认删除所有留言？此操作无法撤销。')) return;
+      const pw = sessionStorage.getItem('tree_admin_pw') || prompt('请输入管理员密码以删除所有留言：');
+      if(!pw) return;
+      try{
+        const res = await fetch('/api/messages', { method: 'DELETE', headers: { 'x-admin-pw': pw }, credentials: 'same-origin' });
+        if(res.ok){ localStorage.removeItem(KEY); render(); return; }
+        const data = await res.json(); if(data && data.error === 'unauthorized'){ alert('管理员密码错误'); return; }
+      }catch(e){ /* fallback */ }
+      // fallback local
       localStorage.removeItem(KEY); render();
     });
 
@@ -281,9 +335,9 @@
       textInput.value = ''; nameInput.value = ''; textInput.focus();
     });
 
-    // initialize admin state and render
+    // initialize admin state, try to load messages from server, then render
     setAdmin(isAdmin());
-    render();
+    (async ()=>{ await loadMessagesFromServer().catch(()=>{}); render(); })();
   })();
   </script>
 
