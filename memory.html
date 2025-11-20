@@ -206,6 +206,29 @@
         }
       }, { passive: true });
     })();
+
+    // Ensure frosted-glass appearance remains on mobile after the book-stage fade-in
+    (function ensureFrostAfterAnimation(){
+      const stage = document.querySelector('.book-stage');
+      if (!stage) return;
+
+      stage.addEventListener('animationend', (ev) => {
+        // only respond to the fadeIn animation we use for entrance
+        if (ev.animationName !== 'fadeIn') return;
+        // respect reduced motion prefs
+        if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+        // only apply on small screens (mobile)
+        if (window.innerWidth > 600) return;
+
+        const pages = document.querySelectorAll('.book .page');
+        pages.forEach(p => {
+          p.style.background = 'rgba(255,255,255,0.36)';
+          p.style.border = '1px solid rgba(255,255,255,0.6)';
+          p.style.webkitBackdropFilter = 'blur(10px) saturate(120%)';
+          p.style.backdropFilter = 'blur(10px) saturate(120%)';
+        });
+      });
+    })();
   });
   </script>
 
