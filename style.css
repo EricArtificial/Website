@@ -70,6 +70,26 @@ body.memory-bg::before {
   display: none !important;
 }
 
+/* Birthday full-page background (no overlay) */
+body.birthday-bg {
+  background-image: url('Elements/Birthday_BG.png');
+  /* Make the background image span the full page width and scale height accordingly. */
+  background-size: 100% auto; /* width = page width, height scales to preserve aspect */
+  background-position: center top; /* align image from its top edge */
+  background-repeat: no-repeat;
+  background-color: #fff6f8; /* fallback/tint */
+  /* Ensure the document is at least as tall as the scaled image so the image bottom
+     coincides with the page bottom. Calculation: (imageHeight / imageWidth) * 100vw */
+  min-height: calc(3995 / 800 * 100vw);
+}
+/* hide the standard overlay for birthday page (kept for consistency) */
+body.birthday-bg::before { display: none !important; }
+
+/* Add a spacer that keeps the document tall enough to show the full 800x3995 image
+   when the image width equals the page width. Calculated padding-top preserves aspect ratio:
+   (3995 / 800) * 100% = 499.375% */
+/* spacer no longer needed; min-height calculation above handles dynamic sizing */
+
 /* Overlay moved to body so it covers the whole background image */
 body.hero-bg::before {
   content: '';
@@ -584,6 +604,42 @@ body.hero-bg.no-bg {
   border-radius: 12px;
   box-shadow: 0 16px 36px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.6);
 }
+
+/* Reusable frosted-card used by birthday modules */
+.frost-card {
+  background: rgba(255,255,255,0.36);
+  border: 1px solid rgba(255,255,255,0.6);
+  -webkit-backdrop-filter: blur(10px) saturate(120%);
+  backdrop-filter: blur(10px) saturate(120%);
+  border-radius: 14px;
+  padding: 18px;
+  box-shadow: 0 12px 36px rgba(0,0,0,0.12);
+  transition: transform 260ms cubic-bezier(.2,.9,.2,1), box-shadow 260ms ease, opacity 200ms ease;
+}
+.frost-card:hover { transform: translateY(-8px); box-shadow: 0 20px 46px rgba(0,0,0,0.14); }
+
+/* small entrance float animation */
+@keyframes floatIn {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.frost-card.float-in { animation: floatIn 420ms cubic-bezier(.2,.9,.2,1) forwards; }
+
+.module-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap:18px; width:90%; max-width:980px; margin: 20px auto; }
+
+.wish-modal {
+  position: fixed; inset: 0; display: grid; place-items: center; z-index: 1200;
+}
+.wish-backdrop { position: absolute; inset:0; background: rgba(0,0,0,0.24); }
+.wish-box { position: relative; z-index: 2; width: 92%; max-width: 520px; }
+
+/* cake flame micro animation */
+.cake-svg .flame { transform-origin: center bottom; animation: flameFlicker 900ms infinite ease-in-out }
+@keyframes flameFlicker { 0%{ transform: scaleY(1) } 50%{ transform: scaleY(0.86) } 100%{ transform: scaleY(1) } }
+
+/* ensure mini fireworks canvas renders crisply */
+#miniFx { display:block; width:100%; height:100%; }
+
 
 /* Tree-page: remove button black borders and default outline, keep an accessible focus ring */
 .tree-box .btn,

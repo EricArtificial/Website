@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>生日 - Our Story</title>
+  <link rel="stylesheet" href="style.css" />
+  
+</head>
+<body class="birthday-bg">
+  <div class="navbar">
+    <a href="index.html" class="logo">Our Story</a>
+    <div class="nav-links">
+      <a href="album.html">相册</a>
+      <a href="memory.html">纪念册</a>
+      <a href="tree.html">树苗</a>
+    </div>
+  </div>
+
+  <main class="container" style="padding-top: calc(var(--navbar-height) + 640px); min-height: calc(100vh - var(--navbar-height));">
+    <div class="module-grid">
+      <!-- Blow candles & wish module -->
+      <section class="frost-card float-in" id="wishModule" aria-labelledby="wishTitle">
+        <h3 id="wishTitle" style="margin-top:0">吹蜡烛 · 许愿</h3>
+        <div style="display:flex;gap:12px;align-items:center;">
+          <svg width="92" height="92" viewBox="0 0 160 160" class="cake-svg" aria-hidden="true">
+            <rect x="18" y="70" width="124" height="48" rx="8" fill="#ffd7e6" />
+            <rect x="26" y="84" width="108" height="34" rx="6" fill="#fff" />
+            <!-- flames group -->
+            <g id="flames" transform="translate(0,-6)">
+              <path class="flame" d="M66 52 C68 46, 72 44, 74 52 C72 50, 68 50, 66 52 Z" fill="#ffcf6b" />
+              <path class="flame" d="M76 48 C78 42, 82 40, 84 48 C82 46, 78 46, 76 48 Z" fill="#ffd37f" />
+              <path class="flame" d="M86 52 C88 46, 92 44, 94 52 C92 50, 88 50, 86 52 Z" fill="#ffc36a" />
+            </g>
+          </svg>
+          <div style="flex:1">
+            <p style="margin:0 0 8px 0;color:#333">靠近蜡烛，点击下方“吹蜡烛”按钮来吹灭蜡烛并许下心愿。</p>
+            <div style="display:flex;gap:8px;margin-top:8px;">
+              <button id="blowBtn" class="btn">吹蜡烛</button>
+              <button id="openWishBtn" class="btn btn-light">直接许愿</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Fireworks viewer module -->
+      <section class="frost-card float-in" id="fireModule" aria-labelledby="fireTitle">
+        <h3 id="fireTitle" style="margin-top:0">看烟花</h3>
+        <p style="color:#333;margin-bottom:10px">点击“播放烟花”在模块内观看烟花表演。</p>
+        <div style="position:relative; height:160px; border-radius:10px; overflow:hidden;">
+          <canvas id="miniFx" style="width:100%; height:100%; display:block; background:transparent;"></canvas>
+          <div style="position:absolute;inset:0;display:flex;align-items:end;justify-content:center;padding:10px;pointer-events:none">
+            <button id="playFire" class="btn" style="pointer-events:auto">播放烟花</button>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Wish modal (hidden by default) -->
+    <div id="wishModal" class="wish-modal" style="display:none">
+      <div class="wish-backdrop"></div>
+      <div class="wish-box frost-card">
+        <h3 style="margin-top:0">许下你的愿望</h3>
+        <form id="wishForm">
+          <textarea id="wishInput" placeholder="在此输入你的愿望..." maxlength="200" style="width:100%;min-height:100px;border-radius:8px;border:1px solid rgba(0,0,0,0.06);padding:8px"></textarea>
+          <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
+            <button type="button" id="wishCancel" class="btn btn-light">取消</button>
+            <button type="submit" class="btn">许个愿</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+  </main>
+</main>
+
+<script>
+// Birthday page interactions: blow-to-wish and mini fireworks
+(function(){
+  const blowBtn = document.getElementById('blowBtn');
+  const openWishBtn = document.getElementById('openWishBtn');
+  const flames = document.getElementById('flames');
+  const wishModal = document.getElementById('wishModal');
+  const wishForm = document.getElementById('wishForm');
+  const wishInput = document.getElementById('wishInput');
+  const wishCancel = document.getElementById('wishCancel');
+
+  function showModal(){ wishModal.style.display = 'grid'; wishInput.focus(); }
+  function hideModal(){ wishModal.style.display = 'none'; wishInput.value = ''; }
+
+  // blow action: extinguish flames then open wish modal
+  blowBtn.addEventListener('click', ()=>{
+    if(!flames) return showModal();
+    flames.style.transition = 'transform 520ms ease, opacity 520ms ease';
+    flames.style.opacity = '0';
+    flames.style.transform = 'translateY(-10px) scaleY(0.4)';
+    setTimeout(()=> showModal(), 520);
+  });
+
+  openWishBtn.addEventListener('click', ()=> showModal());
+  wishCancel.addEventListener('click', hideModal);
+
+  wishForm.addEventListener('submit', async (ev)=>{
+    ev.preventDefault();
+    const text = wishInput.value && wishInput.value.trim();
+    if(!text) return wishInput.focus();
+    // save locally
+    try{
+      const key = 'birthday_wishes_v1';
+      const list = JSON.parse(localStorage.getItem(key) || '[]');
+      list.unshift({ text, time: Date.now() });
+      localStorage.setItem(key, JSON.stringify(list.slice(0,64)));
+    }catch(e){ console.warn('save wish', e) }
+
+    // try to post to server (optional, fails silently)
+    try{
+      await fetch('/api/messages', { method:'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ name: 'Wish', text }) });
+    }catch(e){ /* ignore */ }
+
+    hideModal();
+    // small celebration: quick fireworks in main canvas
+    runMiniFireworks();
+  });
+
+  // ---------------- mini fireworks ----------------
+  const canvas = document.getElementById('miniFx');
+  const playBtn = document.getElementById('playFire');
+  let ctx, DPR;
+
+  function resize(){
+    if(!canvas) return;
+    DPR = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = Math.round(rect.width * DPR);
+    canvas.height = Math.round(rect.height * DPR);
+    ctx = canvas.getContext('2d');
+    ctx.scale(DPR, DPR);
+  }
+
+  window.addEventListener('resize', resize);
+  resize();
+
+  function random(min,max){ return Math.random()*(max-min)+min }
+
+  function runMiniFireworks(){
+    if(!ctx) return;
+    const w = canvas.clientWidth, h = canvas.clientHeight;
+    const particles = [];
+    // create 6 bursts
+    for(let b=0;b<6;b++){
+      const cx = random(w*0.2, w*0.8);
+      const cy = random(h*0.2, h*0.6);
+      const count = 28;
+      for(let i=0;i<count;i++){
+        const angle = Math.PI*2*(i/count) + random(-0.2,0.2);
+        const speed = random(1.6,4.6);
+        particles.push({ x:cx, y:cy, vx: Math.cos(angle)*speed, vy: Math.sin(angle)*speed, life: random(40,90), age:0, color: `hsl(${Math.floor(random(0,360))} 80% ${random(45,65)}%)`, r: random(1.6,3.6) });
+      }
+    }
+
+    let rafId; let t=0;
+    function frame(){
+      t++; ctx.clearRect(0,0,w,h);
+      for(let i=particles.length-1;i>=0;i--){
+        const p = particles[i];
+        p.age++;
+        p.vy += 0.06; // gravity
+        p.x += p.vx; p.y += p.vy;
+        const alpha = Math.max(0, 1 - p.age/p.life);
+        ctx.beginPath(); ctx.fillStyle = p.color; ctx.globalAlpha = alpha;
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.fill();
+        if(p.age > p.life) particles.splice(i,1);
+      }
+      ctx.globalAlpha = 1;
+      if(particles.length) rafId = requestAnimationFrame(frame); else cancelAnimationFrame(rafId);
+    }
+    frame();
+  }
+
+  if(playBtn) playBtn.addEventListener('click', runMiniFireworks);
+
+  // expose for debugging if needed
+  window.runMiniFireworks = runMiniFireworks;
+})();
+</script>
+
+</body>
+</html>
